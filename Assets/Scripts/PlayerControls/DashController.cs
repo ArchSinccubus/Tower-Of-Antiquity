@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class DashController : BaseController
 {
-    public PlayerController mainController;
-
     public float DashStrength;
     public float DashDuration;
     public int DashAmount;
@@ -26,19 +24,21 @@ public class DashController : BaseController
     // Update is called once per frame
     void Update()
     {
-        float x = Input.GetAxis("Dash");
 
-        if (Input.GetAxis("Dash") != 0 && currDashAmount > 0)
-        {
-            StartCoroutine(Dash());
-
-            currDashAmount--;
-        }
     }
 
     private void FixedUpdate()
     {
         
+    }
+
+    public void startDash()
+    {
+        if (currDashAmount > 0)
+        {
+            currDashAmount--;
+            StartCoroutine(Dash());
+        }
     }
 
     public IEnumerator Dash()

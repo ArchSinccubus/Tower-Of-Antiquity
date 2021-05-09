@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface MovementTypeInterface
+public class EnemyGenerator
 {
-    void Move();
+    
 }

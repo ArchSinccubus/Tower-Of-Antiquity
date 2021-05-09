@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class WalkerController : BaseController
 {
-    public PlayerController mainController;
-
     public float MaxHorizontalSpeed;
 
     public float currVelocity;
@@ -19,8 +17,6 @@ public class WalkerController : BaseController
     // Update is called once per frame
     void Update()
     {
-        currVelocity = Input.GetAxisRaw("Horizontal");
-
         if (currVelocity < 0)
         {
             mainController.isFacingLeft = true;

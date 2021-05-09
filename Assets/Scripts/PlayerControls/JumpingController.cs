@@ -4,11 +4,6 @@ using UnityEngine;
 
 public class JumpingController : BaseController
 {
-    public PlayerController mainController;
-
-    [SerializeField]
-    private bool touchingFloor;
-
     public int jumpAmount;
     [SerializeField]
     private int currJumpAmount;
@@ -24,12 +19,9 @@ public class JumpingController : BaseController
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && currJumpAmount > 0)
-        {
-            reduceJumps();
-            Jump();
-        }
     }
+
+    
 
     private void FixedUpdate()
     {
@@ -39,13 +31,14 @@ public class JumpingController : BaseController
 
     public void Jump()
     {
-        mainController.rb.velocity = new Vector2(mainController.rb.velocity.x, 0);
-        mainController.rb.AddForce(new Vector2(0, InitialJumpSpeed * mainController.rb.gravityScale), ForceMode2D.Impulse);
-        if (mainController.isTouchingFloor)
+        if (currJumpAmount > 0)
         {
-            mainController.isTouchingFloor = false;
-        }
+            reduceJumps();
 
+
+            mainController.rb.velocity = new Vector2(mainController.rb.velocity.x, 0);
+            mainController.rb.AddForce(new Vector2(0, InitialJumpSpeed * mainController.rb.gravityScale), ForceMode2D.Impulse);
+        }
     }
 
     public void reduceJumps()

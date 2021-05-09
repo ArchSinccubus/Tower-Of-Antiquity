@@ -7,11 +7,11 @@ public class PlayerController : CharacterController
     public WalkerController playerWalk;
     public JumpingController playerJump;
     public DashController playerDash;
+    public AttackController playerAttack;
+    public WalljumpController playerWallJump;
 
-    public bool isTouchingFloor;
-    public bool isFacingLeft;
 
-    public Rigidbody2D rb;
+    public bool isJumpingAxisUsed, isAttackAxisUsed, isDashAxisUsed;
 
     public SpriteRenderer PlayerGFX;
 
@@ -30,52 +30,78 @@ public class PlayerController : CharacterController
     // Update is called once per frame
     void Update()
     {
+        playerWalk.currVelocity = Input.GetAxisRaw("Horizontal");
 
         if (Input.GetKeyDown(KeyCode.LeftShift))
         {
-            Debug.DrawLine(transform.position, transform.position + Vector3.down * 2,Color.black, 100);
+            Debug.DrawLine(transform.position, transform.position + Vector3.down * 2, Color.black, 100);
 
         }
 
+        if (Input.GetAxisRaw("Jump") != 0 && !isJumpingAxisUsed)
+        {
+            if (isTouchingWall && !isTouchingFloor)
+            {
+                playerWallJump.Jump();
+                //DisableController(playerWalk);
+                //Invoke("EnableAllControllers", 0.3f);
+            }
+            else
+            {
+                playerJump.Jump();
+            }
+            isJumpingAxisUsed = true;
+        }
+        else if(Input.GetAxisRaw("Jump") == 0)
+        {
+            isJumpingAxisUsed = false;
+        }
 
+        if (Input.GetAxis("Fire1") != 0 && !isAttackAxisUsed)
+        {
+            playerAttack.Attack();
+            isAttackAxisUsed = true;
+        }
+        else if (Input.GetAxis("Fire1") == 0)
+        {
+            isAttackAxisUsed = false;
+        }
+
+        if (Input.GetAxis("Dash") != 0 && !isDashAxisUsed)
+        {
+            playerDash.startDash();
+            isDashAxisUsed = true;
+        }
+        else if (Input.GetAxis("Dash") == 0)
+        {
+            isDashAxisUsed = false;
+        }
     }
 
     private void FixedUpdate()
     {
-        if (isTouchingFloor)
-        {
-            if (!CheckDownCollision())
-            {
-                isTouchingFloor = false;
-                playerJump.reduceJumps();                
-            }
 
-        }
     }
 
-    private bool CheckDownCollision()
+
+
+    public override void FloorTouched()
     {
-        List<Collider2D> res = new List<Collider2D>();
-
-        rb.GetAttachedColliders(res);
-
-        int layerMask = 1 << 2;
-
-        RaycastHit2D hit = Physics2D.BoxCast(transform.position, new Vector2(res[0].bounds.size.x - 0.001f, res[0].bounds.size.y), 0, Vector2.down, 0.01f, ~layerMask);
-
-        return hit;
-
-       
+        base.FloorTouched();
+        playerJump.resetJumps();
+        playerDash.resetDashes();
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    public override void WallTouched()
     {
-        if (collision.collider.tag == "Floor" && CheckDownCollision())
-        {
-            isTouchingFloor = true;
-            playerJump.resetJumps();
-            playerDash.resetDashes();
-        }
+        base.WallTouched();
+        playerWallJump.resetJumps();
+        
+    }
+
+    public override void SetWallDir(float dir)
+    {
+        playerWallJump.WallDir = dir;
     }
 
     public void turnGFX()
@@ -88,21 +114,34 @@ public class PlayerController : CharacterController
     {
 
         base.GetHit();
+        DisableAllControllers();
+        Vector2 hitVector = returnForward() * -1;
+
+        if (isTouchingFloor)
+        {
+            hitVector += (Vector2.up * 0.25f);
+        }
+        rb.velocity = Vector2.zero;
+        rb.AddForce(hitVector.normalized, ForceMode2D.Impulse);
+
+        Invoke("EnableAllControllers", 0.25f);
     }
 
     #region controller management
     public void DisableAllControllers()
     {
-        playerWalk.enabled = false;
-        playerJump.enabled = false;
-        playerDash.enabled = false;
+        foreach (var item in GetComponents<BaseController>())
+        {
+            item.enabled = false;
+        }
     }
 
     public void EnableAllControllers()
     {
-        playerWalk.enabled = true;
-        playerJump.enabled = true;
-        playerDash.enabled = true;
+        foreach (var item in GetComponents<BaseController>())
+        {
+            item.enabled = true;
+        }
     }
 
     public void DisableController(BaseController controller)
@@ -113,7 +152,26 @@ public class PlayerController : CharacterController
     public void EnableController(BaseController controller)
     {
         controller.enabled = true;
-    } 
+    }
     #endregion
 
+    public Vector2 returnForward()
+    {
+        if (isFacingLeft)
+        {
+            return Vector2.left;
+        }
+         return Vector2.right;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "Attack")
+        {
+            if (collision.GetComponent<AttackController>().getParentTag() == "Enemy")
+            {
+                GotHitEvent.Invoke();
+            }
+        }
+    }
 }
